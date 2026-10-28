@@ -1,0 +1,7 @@
+import { StyleSheet, Text } from 'react-native';
+import { useTheme } from '../theme/theme-context';
+import { repairStatusLabel } from '../utils/repair-status';
+const labels: Record<string, string> = { pendiente: 'Pendiente', en_progreso: 'En progreso', completada: 'Completada', cancelada: 'Cancelada', planificado: 'Planificado', archivado: 'Archivado', baja: 'Baja', media: 'Media', alta: 'Alta', urgente: 'Urgente', borrador: 'Borrador', pendiente_aprobacion: 'Pendiente de aprobación', aprobado: 'Aprobado', rechazado: 'Rechazado', vencido: 'Vencido', reemplazado: 'Reemplazado' };
+export function StatusBadge({ value }: { value: string }) { const { colors } = useTheme(); const background = ['urgente', 'cancelada', 'presupuesto_rechazado', 'rechazado'].includes(value) ? `${colors.danger}22` : ['completada', 'reparacion_finalizada', 'entregado', 'aprobado'].includes(value) ? `${colors.success}22` : `${colors.primary}20`; const foreground = ['urgente', 'cancelada', 'presupuesto_rechazado', 'rechazado'].includes(value) ? colors.danger : ['completada', 'reparacion_finalizada', 'entregado', 'aprobado'].includes(value) ? colors.success : colors.primary; return <Text style={[styles.badge, { backgroundColor: background, color: foreground }]}>{labels[value] ?? repairStatusLabel(value)}</Text>; }
+const styles = StyleSheet.create({ badge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, fontWeight: '700', overflow: 'hidden' } });
+

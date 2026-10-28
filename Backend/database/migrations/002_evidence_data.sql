@@ -1,0 +1,5 @@
+ALTER TABLE task_evidence
+  MODIFY COLUMN file_url VARCHAR(1000) NULL,
+  ADD COLUMN IF NOT EXISTS file_data LONGTEXT NULL AFTER file_url,
+  ADD COLUMN IF NOT EXISTS mime_type VARCHAR(100) NOT NULL DEFAULT 'image/jpeg' AFTER file_data;
+

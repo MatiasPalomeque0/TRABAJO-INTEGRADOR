@@ -1,0 +1,42 @@
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import swaggerUi from 'swagger-ui-express';
+import { env, allowedOrigins } from './config/env.js';
+import { apiRateLimit } from './middlewares/security.middleware.js';
+import { errorHandler, notFoundHandler } from './utils/errors.js';
+import { openapi } from './config/openapi.js';
+import { authRouter } from './routes/auth.routes.js';
+import { userRouter } from './routes/user.routes.js';
+import { projectRouter } from './routes/project.routes.js';
+import { taskRouter } from './routes/task.routes.js';
+import { miscRouter } from './routes/misc.routes.js';
+import { deviceRouter } from './routes/device.routes.js';
+import { repairRouter } from './routes/repair.routes.js';
+import { serviceRouter } from './routes/service.routes.js';
+import { customerRouter } from './routes/customer.routes.js';
+import { intakeRouter } from './routes/intake.routes.js';
+
+export const app = express();
+app.disable('x-powered-by');
+app.use(helmet());
+app.use(cors({ origin: (origin, callback) => { if (!origin || allowedOrigins.includes(origin)) callback(null, true); else callback(new Error('CORS origin not allowed')); } }));
+app.use(express.json({ limit: '12mb' }));
+app.use(apiRateLimit);
+app.get('/health', (_req, res) => { console.info(`[health-diagnostic] ${new Date().toISOString()} GET /health`); res.json({ data: { status: 'ok', service: 'techfix-backend' } }); });
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapi));
+app.use('/api/auth', authRouter);
+app.use('/api/users', userRouter);
+app.use('/api/projects', projectRouter);
+app.use('/api/tasks', taskRouter);
+app.use('/api/devices', deviceRouter);
+app.use('/api/repairs', repairRouter);
+app.use('/api/services', serviceRouter);
+app.use('/api/customers', customerRouter);
+app.use('/api/intakes', intakeRouter);
+app.use('/api', miscRouter);
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+if (process.env.NODE_ENV !== 'test') app.listen(env.PORT, () => console.log(`TechFix API escuchando en ${env.PUBLIC_BASE_URL}`));
+

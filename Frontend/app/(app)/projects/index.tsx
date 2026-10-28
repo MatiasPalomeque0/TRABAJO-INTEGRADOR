@@ -1,0 +1,15 @@
+import { useCallback, useEffect, useState } from 'react';
+import { router } from 'expo-router';
+import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { Button } from '../../../src/components/Button';
+import { Card } from '../../../src/components/Card';
+import { EmptyState, ErrorMessage, Loading } from '../../../src/components/Feedback';
+import { Screen } from '../../../src/components/Screen';
+import { StatusBadge } from '../../../src/components/StatusBadge';
+import { useAuth } from '../../../src/context/auth-context';
+import { projectApi } from '../../../src/services/projects';
+import { useTheme } from '../../../src/theme/theme-context';
+import type { Project } from '../../../src/types/api';
+export default function ProjectsScreen() { const { colors } = useTheme(); const { user } = useAuth(); const [items, setItems] = useState<Project[]>([]); const [error, setError] = useState<string>(); const [loading, setLoading] = useState(true); const load = useCallback(async () => { try { setError(undefined); setItems(await projectApi.list()); } catch (e) { setError(e instanceof Error ? e.message : 'No se pudieron cargar los proyectos.'); } finally { setLoading(false); } }, []); useEffect(() => { load(); }, [load]); if (loading) return <Loading />; return <Screen refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}><View style={styles.heading}><View><Text style={[styles.title, { color: colors.text }]}>Proyectos</Text><Text style={{ color: colors.muted }}>{items.length} disponibles para vos</Text></View>{user?.roles.some((role) => role === 'admin' || role === 'tecnico') ? <Button title="＋ Nuevo" onPress={() => router.push('/(app)/projects/new')} /> : null}</View>{error ? <ErrorMessage message={error} onRetry={load} /> : null}{items.length === 0 && !error ? <EmptyState title="Todavía no hay proyectos" description="Cuando formes parte de uno, lo vas a ver acá." /> : items.map((project) => <Pressable key={project.id} onPress={() => router.push(`/(app)/projects/${project.id}`)}><Card><View style={styles.row}><Text style={[styles.cardTitle, { color: colors.text }]}>{project.name}</Text><StatusBadge value={project.status} /></View><Text style={{ color: colors.muted }} numberOfLines={2}>{project.description || 'Sin descripción'}</Text><View style={styles.progress}><View style={[styles.progressFill, { width: `${project.progress}%`, backgroundColor: colors.primary }]} /></View><Text style={{ color: colors.muted, fontSize: 12 }}>{project.progress}% completado · {project.memberCount} integrantes</Text></Card></Pressable>)}</Screen>; }
+const styles = StyleSheet.create({ heading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 }, title: { fontSize: 28, fontWeight: '900' }, row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }, cardTitle: { fontSize: 18, fontWeight: '800', flex: 1 }, progress: { height: 8, borderRadius: 8, backgroundColor: '#D9E2EC', overflow: 'hidden' }, progressFill: { height: '100%', borderRadius: 8 } });
+

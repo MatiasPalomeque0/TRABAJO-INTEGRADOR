@@ -1,0 +1,14 @@
+import { useCallback, useEffect, useState } from 'react';
+import { Redirect, useLocalSearchParams } from 'expo-router';
+import { StyleSheet, Text } from 'react-native';
+import { Card } from '../../src/components/Card';
+import { ErrorMessage, Loading } from '../../src/components/Feedback';
+import { Screen } from '../../src/components/Screen';
+import { StatusBadge } from '../../src/components/StatusBadge';
+import { intakeApi, type IntakeResponse } from '../../src/services/intakes';
+import { useAuth } from '../../src/context/auth-context';
+import { canManageCommercialRecords } from '../../src/utils/permissions';
+import { useTheme } from '../../src/theme/theme-context';
+
+export default function IntakeDetailScreen() { const { id } = useLocalSearchParams<{ id: string }>(); const { colors } = useTheme(); const { user } = useAuth(); const [data, setData] = useState<IntakeResponse>(); const [error, setError] = useState<string>(); const load = useCallback(async () => { try { setError(undefined); setData(await intakeApi.get(Number(id))); } catch (e) { setError(e instanceof Error ? e.message : 'No se pudo cargar la orden.'); } }, [id]); useEffect(() => { if (canManageCommercialRecords(user)) void load(); }, [load, user]); if (!canManageCommercialRecords(user)) return <Redirect href="/denied" />; if (!data && !error) return <Loading />; if (!data) return <Screen><ErrorMessage message={error ?? 'Orden no encontrada.'} onRetry={load} /></Screen>; const { repair, intake } = data; return <Screen><Text style={[styles.title, { color: colors.text }]}>Orden registrada #{repair.id}</Text><StatusBadge value={repair.status} /><Card><Text style={[styles.section, { color: colors.text }]}>Cliente y equipo</Text><Text style={{ color: colors.text }}>{repair.customerName ?? repair.clientName}</Text><Text style={{ color: colors.muted }}>{repair.deviceName}</Text><Text style={{ color: colors.muted }}>Motivo: {repair.problemDescription}</Text></Card><Card><Text style={[styles.section, { color: colors.text }]}>Ingreso</Text><Text style={{ color: colors.muted }}>Responsable: {intake.receivedByName}</Text><Text style={{ color: colors.muted }}>Fecha: {intake.receivedAt}</Text><Text style={{ color: colors.text }}>Estado físico: {intake.equipmentCondition || 'No informado'}</Text><Text style={{ color: colors.text }}>Observaciones: {intake.observations || 'Sin observaciones'}</Text></Card><Card><Text style={[styles.section, { color: colors.text }]}>Accesorios</Text>{intake.items.length ? intake.items.map((item) => <Text key={item.id} style={{ color: colors.text }}>• {item.description} — {item.conditionAtIntake || 'condición no informada'}</Text>) : <Text style={{ color: colors.muted }}>No se registraron accesorios.</Text>}</Card></Screen>; }
+const styles = StyleSheet.create({ title: { fontSize: 28, fontWeight: '900' }, section: { fontSize: 18, fontWeight: '800' } });
